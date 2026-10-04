@@ -260,6 +260,12 @@ typedef struct {
      * qualified_name (base QN = the first qn_sig_off bytes); 0 = no suffix.
      * Always 0 until a language enables its callable_identity mode. */
     uint32_t qn_sig_off;
+    /* Documents only: facts a document definition adds to its node's
+     * properties, as a NULL-terminated key, value, key, value, ... list (an
+     * ADR's id, status, date, deciders, title). Keys are fixed literals; the
+     * values are escaped where the properties are written. Tail field:
+     * zero-init stays valid. */
+    const char **extra_props;
 } CBMDefinition;
 
 /* Argument captured from a call expression */
