@@ -970,6 +970,8 @@ extern void suite_traces(void);
 extern void suite_configlink(void);
 extern void suite_doclinks(void);
 extern void suite_doc_mentions(void);
+extern void suite_doc_mentions_cost(void);
+extern void suite_doc_mentions_msbuild(void);
 extern void suite_infrascan(void);
 extern void suite_cli(void);
 extern void suite_agent_clients(void);
@@ -1339,6 +1341,8 @@ int main(int argc, char **argv) {
 
     /* Doc-comment references -> MENTIONS */
     RUN_SELECTED_SUITE(doc_mentions);
+    RUN_SELECTED_SUITE(doc_mentions_cost);
+    RUN_SELECTED_SUITE(doc_mentions_msbuild);
 
     /* Infrastructure scanning */
     RUN_SELECTED_SUITE(infrascan);
