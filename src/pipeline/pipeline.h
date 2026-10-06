@@ -371,6 +371,12 @@ bool cbm_go_suppress_bare_field_ref(bool is_go, bool is_member_access, const cha
 /* Get the label of a qualified name, or NULL if not found. */
 const char *cbm_registry_label_of(const cbm_registry_t *r, const char *qn);
 
+/* A read, a write or a plain value reference never denotes a call: when `qn`
+ * is a Method whose class body also declares a same-named field (the extractor
+ * fences that field as `<qn>#field`), the field is the target. Returns the
+ * field's QN, else `qn`. Pure; unit-tested in test_registry.c. */
+const char *cbm_registry_value_target(const cbm_registry_t *r, const char *qn);
+
 /* Find all QNs with a given simple name. Sets *out and *count.
  * Caller does NOT free the array (owned by registry). */
 int cbm_registry_find_by_name(const cbm_registry_t *r, const char *name, const char ***out,
