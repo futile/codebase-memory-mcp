@@ -586,6 +586,48 @@ TEST(java_class) {
     PASS();
 }
 
+/* A class field is one Field. Java, C# and Solidity list the field
+ * declaration as a variable kind too, and the class-body variable pass minted
+ * a second node: a Variable with the module's qualified name (Query.filters
+ * became `demo.query.filters`, the name of a package a documentation code
+ * span then bound). Languages whose class variables are no Field keep them. */
+TEST(class_field_is_one_field_not_also_a_variable) {
+    CBMFileResult *r = extract("package demo.query;\npublic class Query {\n"
+                               "    private Object filters;\n"
+                               "    private static final String PROP = \"v\";\n}\n",
+                               CBM_LANG_JAVA, "t", "Query.java");
+    ASSERT_NOT_NULL(r);
+    ASSERT_EQ(count_defs_named(r, "Field", "filters"), 1);
+    ASSERT_EQ(count_defs_named(r, "Variable", "filters"), 0);
+    /* an initialized field is named by its declarator's name, not its text
+     * (`PROP = "v"` was the Field's name, so only the duplicate was findable) */
+    ASSERT_EQ(count_defs_named(r, "Field", "PROP"), 1);
+    ASSERT_EQ(count_defs_named(r, "Variable", "PROP"), 0);
+    cbm_free_result(r);
+    r = extract("namespace Demo {\n  public class Q {\n    private int count;\n  }\n}\n",
+                CBM_LANG_CSHARP, "t", "Q.cs");
+    ASSERT_NOT_NULL(r);
+    ASSERT_EQ(count_defs_named(r, "Field", "count"), 1);
+    ASSERT_EQ(count_defs_named(r, "Variable", "count"), 0);
+    cbm_free_result(r);
+    r = extract("pragma solidity ^0.8.0;\ncontract Q {\n    uint256 public total;\n}\n",
+                CBM_LANG_SOLIDITY, "t", "Q.sol");
+    ASSERT_NOT_NULL(r);
+    ASSERT_EQ(count_defs_named(r, "Field", "total"), 1);
+    ASSERT_EQ(count_defs_named(r, "Variable", "total"), 0);
+    cbm_free_result(r);
+    /* no Field for these: their class variables stay */
+    r = extract("class Q {\n    var count: Int = 0\n}\n", CBM_LANG_SWIFT, "t", "Q.swift");
+    ASSERT_NOT_NULL(r);
+    ASSERT_EQ(count_defs_named(r, "Variable", "count"), 1);
+    cbm_free_result(r);
+    r = extract("extends Node\nclass Inner:\n    var x = 1\n", CBM_LANG_GDSCRIPT, "t", "q.gd");
+    ASSERT_NOT_NULL(r);
+    ASSERT_EQ(count_defs_named(r, "Variable", "x"), 1);
+    cbm_free_result(r);
+    PASS();
+}
+
 TEST(java_method) {
     CBMFileResult *r = extract(
         "public class Svc { public void doWork() {} public int compute(int x) { return x; } }",
@@ -5011,10 +5053,11 @@ TEST(swift_non_url_constructor_untouched_issue1892) {
  * the per-file constant map and resolved at the call site, for both return
  * statements and arrow expression bodies. */
 TEST(extract_ts_await_generic_call_issue2210) {
-    CBMFileResult *r = extract("function parseJsonBody<T>() { return {} as T; }\n"
-                               "async function plain() { return await parseJsonBody(); }\n"
-                               "async function generic() { return await parseJsonBody<string>(); }\n",
-                               CBM_LANG_TYPESCRIPT, "t", "await.ts");
+    CBMFileResult *r =
+        extract("function parseJsonBody<T>() { return {} as T; }\n"
+                "async function plain() { return await parseJsonBody(); }\n"
+                "async function generic() { return await parseJsonBody<string>(); }\n",
+                CBM_LANG_TYPESCRIPT, "t", "await.ts");
     ASSERT_NOT_NULL(r);
     ASSERT_FALSE(r->has_error);
     ASSERT_EQ(count_calls_named(r, "parseJsonBody"), 2);
@@ -10036,6 +10079,7 @@ SUITE(extraction) {
     /* OOP */
     RUN_TEST(java_class);
     RUN_TEST(java_method);
+    RUN_TEST(class_field_is_one_field_not_also_a_variable);
     RUN_TEST(java_interface);
     RUN_TEST(java_interface_no_duplicate_function_issue1234);
     RUN_TEST(java_enum_dedup_preserves_calls_issue1234);
